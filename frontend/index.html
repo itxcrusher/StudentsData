@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Gateway Frontend</title>
+
+    <!-- AWS SDK for JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/aws-sdk@2.1105.0/dist/aws-sdk.min.js"></script>
+</head>
+<body>
+    <!--
+    <h1>API Gateway CRUD Operations</h1>
+    -->
+    <!-- Create Form -->
+    <form id="createForm">
+        <label for="createData">Data to Create:</label>
+        <input type="text" id="createData" required>
+        <button type="button" onclick="createData()">Create</button>
+    </form>
+
+    <!-- Read Form -->
+    <form id="readForm">
+        <label for="readId">ID to Read:</label>
+        <input type="text" id="readId" required>
+        <button type="button" onclick="readData()">Read</button>
+    </form>
+
+    <!-- Update Form -->
+    <form id="updateForm">
+        <label for="updateId">ID to Update:</label>
+        <input type="text" id="updateId" required>
+        <label for="updateData">New Data:</label>
+        <input type="text" id="updateData" required>
+        <button type="button" onclick="updateData()">Update</button>
+    </form>
+
+    <!-- Delete Form -->
+    <form id="deleteForm">
+        <label for="deleteId">ID to Delete:</label>
+        <input type="text" id="deleteId" required>
+        <button type="button" onclick="deleteData()">Delete</button>
+    </form>
+
+    <!-- Display Result -->
+    <div id="result"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>

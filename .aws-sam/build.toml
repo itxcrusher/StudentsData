@@ -7,6 +7,6 @@ architecture = "x86_64"
 handler = "app.app"
 manifest_hash = "0f09f55995d5631c21620d0ac1db64db"
 packagetype = "Zip"
-functions = ["StudentFunction"]
+functions = ["StudentFunction", "S3EventFunction"]
 
 [layer_build_definitions]

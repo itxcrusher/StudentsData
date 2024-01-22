@@ -3,15 +3,22 @@ Transform: AWS::Serverless-2016-10-31
 Description: student-api
 
 Globals:
+  Api:
+      Cors:
+        AllowOrigin: "'*'"
+        AllowMethods: "'GET,POST,PATCH,DELETE,OPTIONS'"
+        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
   Function:
     Timeout: 3
 
 Resources:
+          # S3 Bucket
   StudentsBucket:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: students-data-frontend
 
+          # DynamoDB Table
   StudentTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -26,6 +33,22 @@ Resources:
         ReadCapacityUnits: 5
         WriteCapacityUnits: 5
 
+          # SNS Topic
+  S3SNSTopic:
+    Type: 'AWS::SNS::Topic'
+    Properties:
+      DisplayName: 'S3ObjectCreatedTopic'
+      TopicName: 'S3ObjectCreatedTopic'
+
+          # SNS Subscription
+  SNSSubscription:
+    Type: 'AWS::SNS::Subscription'
+    Properties:
+      Protocol: 'email'
+      TopicArn: !Ref S3SNSTopic
+      Endpoint: 'muhammadhassaanjaved99@gmail.com'
+
+          # CRUD Lambda Function
   StudentFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -35,47 +58,193 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName:
-              !Ref StudentTable
+              Ref: StudentTable
       Events:
-        Test:
-          Type: Api
-          Properties:
-            Path: /
-            Method: get
         ListStudents:
           Type: Api
           Properties:
+            RestApiId: 
+              Ref: StudentsApiGateway
             Path: /students
             Method: get
+            #Cors: "'*'"
         PutStudent:
           Type: Api
           Properties:
+            RestApiId: 
+              Ref: StudentsApiGateway
             Path: /students
             Method: post
         GetStudent:
           Type: Api
           Properties:
+            RestApiId: 
+              Ref: StudentsApiGateway
             Path: /students/{id}/
             Method: get
         PatchStudent:
           Type: Api
           Properties:
+            RestApiId: 
+              Ref: StudentsApiGateway
             Path: /students/{id}/
             Method: patch
         DeleteStudent:
           Type: Api
           Properties:
+            RestApiId: 
+              Ref: StudentsApiGateway
             Path: /students/{id}/
             Method: delete
+  
+            # Lambda Policy
+  # LambdaExecutionRole:
+  #   Type: AWS::IAM::Role
+  #   Properties:
+  #     AssumeRolePolicyDocument:
+  #       Version: '2012-10-17'
+  #       Statement:
+  #         - Effect: Allow
+  #           Principal:
+  #             Service:
+  #               - lambda.amazonaws.com
+  #           Action:
+  #             - sts:AssumeRole
+  #     ManagedPolicyArns:
+  #       - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
 
+            # DynamoDB Policy
+  # DynamoDBAccessPolicy:
+  #   Type: AWS::IAM::Policy
+  #   Properties:
+  #     PolicyName: DynamoDBAccessPolicy
+  #     Roles:
+  #       - !Ref LambdaExecutionRole
+  #     PolicyDocument:
+  #       Version: '2012-10-17'
+  #       Statement:
+  #         - Effect: Allow
+  #           Action:
+  #             - dynamodb:GetItem
+  #             - dynamodb:PutItem
+  #             - dynamodb:Scan
+  #           Resource: !GetAtt StudentTable.Arn
 
-Outputs:
-  StudentApi:
-    Description: "API Gateway endpoint URL for Prod stage for Student function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/"
-  StudentFunction:
-    Description: "Student Lambda Function ARN"
-    Value: !GetAtt StudentFunction.Arn
-  StudentFunctionIamRole:
-    Description: "Implicit IAM Role created for Student function"
-    Value: !GetAtt StudentFunctionRole.Arn
+  # UserPool:
+  #   Type: AWS::Cognito::UserPool
+  #   Properties:
+  #     UserPoolName: StudentsUserPool
+  #     Policies:
+  #       PasswordPolicy:
+  #         MinimumLength: 8
+  #         RequireUppercase: true
+  #         RequireLowercase: true
+  #         RequireNumbers: true
+  #         RequireSymbols: true
+
+  # UserPoolClient:
+  #   Type: AWS::Cognito::UserPoolClient
+  #   Properties:
+  #     ClientName: StudentsUserPoolClient
+  #     UserPoolId: !Ref UserPool
+  #     AllowedOAuthFlows:
+  #       - implicit
+  #     AllowedOAuthScopes:
+  #       - email
+  #       - openid
+  #     CallbackURLs:
+  #       - https://example.com/callback
+  #     LogoutURLs:
+  #       - https://example.com/signout
+  #     SupportedIdentityProviders:
+  #       - COGNITO
+
+          # API Gateway
+  # StudentApi:
+  #   Type: 'AWS::Serverless::Api'
+  #   Properties:
+  #     StageName: Prod
+
+          # API Gateway with CORS Configuration (Incomplete)
+  StudentsApiGateway:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      Cors:   # CorsConfiguration:
+        AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+        AllowOrigin: "'*'"
+        MaxAge: "'600'"
+        AllowCredentials: false
+        # Auth:
+        #   Authorizers:
+        #     CognitoAuthorizer:
+        #       UserPoolArn: !GetAtt UserPool.Arn
+        #       IdentitySource: method.request.header.Authorization
+        # EndpointConfiguration: REGIONAL
+
+          # S3 Lambda Function
+  S3EventFunction:  # Create Function
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: S3EventFunction
+      Handler: app.notification_handler
+      Runtime: python3.12
+      CodeUri: ./students/
+      Environment:  # Define Environment Variable
+        Variables:
+          SNS_TOPIC_ARN:
+            Ref: S3SNSTopic
+      Events:     # Attach Trigger
+        S3Event:
+          Type: S3
+          Properties:
+            Bucket:
+              Ref: StudentsBucket
+            Events: s3:ObjectCreated:*
+      # Policies:   # Attach Policy
+      #   - S3ReadPolicy:
+      #       BucketName:
+      #         Ref: StudentsBucket
+
+          # S3 Topic Policy
+  S3InvokeTopicPermission:
+    Type: 'AWS::SNS::TopicPolicy'
+    Properties:
+      Topics:
+        - !Ref S3SNSTopic
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Principal:
+              Service: 'lambda.amazonaws.com'
+            Action: 'sns:Publish'
+            Resource: '*'
+
+          # S3 Lambda Permissions
+  LambdaInvokePermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      Action: 'lambda:InvokeFunction'
+      FunctionName: !Ref S3EventFunction
+      Principal: 's3.amazonaws.com'
+
+          # S3 Topic Permissions
+  LambdaInvokeTopicPermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      Action: 'lambda:InvokeFunction'
+      FunctionName: !Ref S3EventFunction
+      Principal: 'sns.amazonaws.com'
+
+# Outputs:
+#   StudentApi:
+#     Description: "API Gateway endpoint URL for Prod stage for Student function"
+#     Value: !Sub "https://${StudentsApi}.execute-api.${AWS::Region}.amazonaws.com/"
+#   StudentFunction:
+#     Description: "Student Lambda Function ARN"
+#     Value: !GetAtt StudentFunction.Arn
+#   StudentFunctionIamRole:
+#     Description: "Implicit IAM Role created for Student function"
+#     Value: !GetAtt StudentFunctionRole.Arn

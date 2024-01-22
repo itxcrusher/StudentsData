@@ -7,26 +7,27 @@
 
     <!-- AWS SDK for JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/aws-sdk@2.1105.0/dist/aws-sdk.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
 </head>
 <body>
-    <!--
+    
     <h1>API Gateway CRUD Operations</h1>
-    -->
-    <!-- Create Form -->
+
+    <!-- Create -->
     <form id="createForm">
         <label for="createData">Data to Create:</label>
         <input type="text" id="createData" required>
         <button type="button" onclick="createData()">Create</button>
     </form>
 
-    <!-- Read Form -->
+    <!-- Read -->
     <form id="readForm">
         <label for="readId">ID to Read:</label>
         <input type="text" id="readId" required>
         <button type="button" onclick="readData()">Read</button>
     </form>
 
-    <!-- Update Form -->
+    <!-- Update -->
     <form id="updateForm">
         <label for="updateId">ID to Update:</label>
         <input type="text" id="updateId" required>
@@ -35,7 +36,7 @@
         <button type="button" onclick="updateData()">Update</button>
     </form>
 
-    <!-- Delete Form -->
+    <!-- Delete -->
     <form id="deleteForm">
         <label for="deleteId">ID to Delete:</label>
         <input type="text" id="deleteId" required>
@@ -44,6 +45,9 @@
 
     <!-- Display Result -->
     <div id="result"></div>
+
+    <h1>Data from DynamoDB</h1>
+    <div id="data"></div>
 
     <script src="script.js"></script>
 </body>

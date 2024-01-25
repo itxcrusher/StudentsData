@@ -1,54 +1,75 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>API Gateway Frontend</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="shortcut icon" href="sam.png" type="image/x-icon">
+    <title>Serverless Project</title>
+    <link rel="stylesheet" href="styles.css" />
 
     <!-- AWS SDK for JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/aws-sdk@2.1105.0/dist/aws-sdk.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
-</head>
-<body>
-    
-    <h1>API Gateway CRUD Operations</h1>
+  </head>
+  <body>
+    <center>
+      <h1 id="heading">AWS SAM 3-Tier CRUD App</h1>
+    </center>
 
-    <!-- Create -->
-    <form id="createForm">
-        <label for="createData">Data to Create:</label>
-        <input type="text" id="createData" required>
-        <button type="button" onclick="createData()">Create</button>
-    </form>
+    <main>
+      <section>
+        <center>
+          <h2>CRUD Operations</h2>
+          <div>
+            <form id="putForm">
+              <label for="put-id">Create New Item:</label>
+              <input type="text" id="put-id" name="put-id" required />
+              <button type="submit">Create</button>
+            </form>
+          </div>
+          <div>
+            <form id="getForm">
+              <label for="get-id">Retrieve Existing Item:</label>
+              <input type="text" id="get-id" name="get-id" required />
+              <button type="submit">Retrieve</button>
+            </form>
+            
+          </div>
+          <div>
+            <form id="updateForm">
+              <label for="update-id">Update Existing Item:</label>
+              <input type="text" id="update-id" name="update-id" required />
+              <br><br>
+              <label for="new-id">New Item:</label>
+              <input type="text" id="new-id" name="new-id" required />
+              <button type="submit">Update</button>
+            </form>
+          </div>
+          <div>
+            <form id="deleteForm">
+              <label for="delete-id">Delete Existing Item:</label>
+              <input type="text" id="delete-id" name="delete-id" required />
+              <button type="submit">Delete</button>
+            </form>
+          </div>
+        
+      </section>
 
-    <!-- Read -->
-    <form id="readForm">
-        <label for="readId">ID to Read:</label>
-        <input type="text" id="readId" required>
-        <button type="button" onclick="readData()">Read</button>
-    </form>
-
-    <!-- Update -->
-    <form id="updateForm">
-        <label for="updateId">ID to Update:</label>
-        <input type="text" id="updateId" required>
-        <label for="updateData">New Data:</label>
-        <input type="text" id="updateData" required>
-        <button type="button" onclick="updateData()">Update</button>
-    </form>
-
-    <!-- Delete -->
-    <form id="deleteForm">
-        <label for="deleteId">ID to Delete:</label>
-        <input type="text" id="deleteId" required>
-        <button type="button" onclick="deleteData()">Delete</button>
-    </form>
-
-    <!-- Display Result -->
-    <div id="result"></div>
-
-    <h1>Data from DynamoDB</h1>
-    <div id="data"></div>
+      <section>
+        <h2>Retrieve Single Item</h2>
+        <div id="display-id"></div>
+        <h2>List of All Existing Items</h2>
+        <div>
+          <table>
+            <tbody id="tableBody">
+              
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </center>
+    </main>
 
     <script src="script.js"></script>
-</body>
+  </body>
 </html>

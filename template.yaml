@@ -1,24 +1,24 @@
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: student-api
 
 Globals:
   Api:
-      Cors:
-        AllowOrigin: "'*'"
-        AllowMethods: "'GET,POST,PATCH,DELETE,OPTIONS'"
-        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+    Cors:
+      AllowMethods: "'*'" # "'GET,POST,PATCH,DELETE,OPTIONS'"
+      AllowHeaders: "'*'" # "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+      AllowOrigin: "'*'"
   Function:
     Timeout: 3
 
 Resources:
-          # S3 Bucket
+  ######################## S3 Bucket
   StudentsBucket:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: students-data-frontend
 
-          # DynamoDB Table
+  ######################## DynamoDB Table
   StudentTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -33,22 +33,151 @@ Resources:
         ReadCapacityUnits: 5
         WriteCapacityUnits: 5
 
-          # SNS Topic
+  ######################## SNS Topic
   S3SNSTopic:
-    Type: 'AWS::SNS::Topic'
+    Type: "AWS::SNS::Topic"
     Properties:
-      DisplayName: 'S3ObjectCreatedTopic'
-      TopicName: 'S3ObjectCreatedTopic'
+      DisplayName: "S3ObjectCreatedTopic"
+      TopicName: "S3ObjectCreatedTopic"
 
-          # SNS Subscription
+  ######################## SNS Subscription
   SNSSubscription:
-    Type: 'AWS::SNS::Subscription'
+    Type: "AWS::SNS::Subscription"
     Properties:
-      Protocol: 'email'
+      Protocol: "email"
       TopicArn: !Ref S3SNSTopic
-      Endpoint: 'muhammadhassaanjaved99@gmail.com'
+      Endpoint: "muhammadhassaanjaved99@gmail.com"
 
-          # CRUD Lambda Function
+  ######################## API Gateways
+  ApiGateway:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Dev
+      Cors:
+        AllowMethods: "'*'"
+        AllowHeaders: "'*'"
+        AllowOrigin: "'*'"
+
+  # StudentApi:
+  #   Type: 'AWS::Serverless::Api'
+  #   Properties:
+  #     StageName: Prod
+
+  # with CORS Configuration
+  StudentsApiGateway:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      Cors: # CorsConfiguration:
+        AllowMethods: "'*'" # "'GET,POST,PUT,DELETE,OPTIONS'"
+        AllowHeaders: "'*'" # "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+        AllowOrigin: "'*'"
+        MaxAge: "'600'"
+        AllowCredentials: false
+        # Auth:
+        #   Authorizers:
+        #     CognitoAuthorizer:
+        #       UserPoolArn: !GetAtt UserPool.Arn
+        #       IdentitySource: method.request.header.Authorization
+        # EndpointConfiguration: REGIONAL
+
+  ######################## Lambda Functions
+  GetAllFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: GetAll
+      CodeUri: students/
+      Runtime: python3.12
+      Handler: app.get_all
+      Policies:
+        - AWSLambdaExecute
+        - AmazonDynamoDBFullAccess
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: ApiGateway
+            Path: /items
+            Method: GET
+
+  GetByIdFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: GetById
+      CodeUri: students/
+      Runtime: python3.12
+      Handler: app.get_id
+      Policies:
+        - AWSLambdaExecute
+        - AmazonDynamoDBFullAccess
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: ApiGateway
+            Path: /items/{id}
+            Method: GET
+
+  PutItemsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: PutItems
+      CodeUri: students/
+      Runtime: python3.12
+      Handler: app.put_items
+      Policies:
+        - AWSLambdaExecute
+        - AmazonDynamoDBFullAccess
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: ApiGateway
+            Path: /items
+            Method: POST
+
+  UpdateItemsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: UpdateItems
+      CodeUri: students/
+      Runtime: python3.12
+      Handler: app.update_items
+      Policies:
+        - AWSLambdaExecute
+        - AmazonDynamoDBFullAccess
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: ApiGateway
+            Path: /items/{id}
+            Method: PATCH
+
+  DeleteItemsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: DeleteItems
+      CodeUri: students/
+      Runtime: python3.12
+      Handler: app.delete_items
+      Policies:
+        - AWSLambdaExecute
+        - AmazonDynamoDBFullAccess
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: ApiGateway
+            Path: /items/{id}
+            Method: DELETE
+
+          # Single CRUD Lambda Function
   StudentFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -63,41 +192,65 @@ Resources:
         ListStudents:
           Type: Api
           Properties:
-            RestApiId: 
+            RestApiId:
               Ref: StudentsApiGateway
             Path: /students
             Method: get
-            #Cors: "'*'"
         PutStudent:
           Type: Api
           Properties:
-            RestApiId: 
+            RestApiId:
               Ref: StudentsApiGateway
             Path: /students
             Method: post
         GetStudent:
           Type: Api
           Properties:
-            RestApiId: 
+            RestApiId:
               Ref: StudentsApiGateway
             Path: /students/{id}/
             Method: get
         PatchStudent:
           Type: Api
           Properties:
-            RestApiId: 
+            RestApiId:
               Ref: StudentsApiGateway
             Path: /students/{id}/
             Method: patch
         DeleteStudent:
           Type: Api
           Properties:
-            RestApiId: 
+            RestApiId:
               Ref: StudentsApiGateway
             Path: /students/{id}/
             Method: delete
-  
-            # Lambda Policy
+
+        # S3 Event Lambda Function
+  S3EventFunction: # Create Function
+    Type: "AWS::Serverless::Function"
+    Properties:
+      FunctionName: S3EventFunction
+      Handler: app.notification_handler
+      Runtime: python3.12
+      CodeUri: ./students/
+      Environment: # Define Environment Variable
+        Variables:
+          SNS_TOPIC_ARN:
+            Ref: S3SNSTopic
+      Events: # Attach Trigger
+        S3Event:
+          Type: S3
+          Properties:
+            Bucket:
+              Ref: StudentsBucket
+            Events: s3:ObjectCreated:*
+      # Policies:   # Attach Policy
+      #   - S3ReadPolicy:
+      #       BucketName:
+      #         Ref: StudentsBucket
+
+  ######################## Policies and Permissions
+  # Lambda Policy
   # LambdaExecutionRole:
   #   Type: AWS::IAM::Role
   #   Properties:
@@ -113,7 +266,7 @@ Resources:
   #     ManagedPolicyArns:
   #       - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
 
-            # DynamoDB Policy
+  # DynamoDB Policy
   # DynamoDBAccessPolicy:
   #   Type: AWS::IAM::Policy
   #   Properties:
@@ -130,6 +283,41 @@ Resources:
   #             - dynamodb:Scan
   #           Resource: !GetAtt StudentTable.Arn
 
+  # S3 Topic Policy
+  S3InvokeTopicPermission:
+    Type: "AWS::SNS::TopicPolicy"
+    Properties:
+      Topics:
+        - !Ref S3SNSTopic
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service: "lambda.amazonaws.com"
+            Action: "sns:Publish"
+            Resource: "*"
+
+          # S3 Lambda Permissions
+  LambdaInvokePermission:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      Action: "lambda:InvokeFunction"
+      FunctionName:
+        !Ref S3EventFunction
+      Principal:
+        "s3.amazonaws.com"
+
+        # S3 Topic Permissions
+  LambdaInvokeTopicPermission:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      Action: "lambda:InvokeFunction"
+      FunctionName:
+        !Ref S3EventFunction
+      Principal: "sns.amazonaws.com"
+
+  ######################## Congnito
   # UserPool:
   #   Type: AWS::Cognito::UserPool
   #   Properties:
@@ -158,86 +346,6 @@ Resources:
   #       - https://example.com/signout
   #     SupportedIdentityProviders:
   #       - COGNITO
-
-          # API Gateway
-  # StudentApi:
-  #   Type: 'AWS::Serverless::Api'
-  #   Properties:
-  #     StageName: Prod
-
-          # API Gateway with CORS Configuration (Incomplete)
-  StudentsApiGateway:
-    Type: AWS::Serverless::Api
-    Properties:
-      StageName: Prod
-      Cors:   # CorsConfiguration:
-        AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
-        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
-        AllowOrigin: "'*'"
-        MaxAge: "'600'"
-        AllowCredentials: false
-        # Auth:
-        #   Authorizers:
-        #     CognitoAuthorizer:
-        #       UserPoolArn: !GetAtt UserPool.Arn
-        #       IdentitySource: method.request.header.Authorization
-        # EndpointConfiguration: REGIONAL
-
-          # S3 Lambda Function
-  S3EventFunction:  # Create Function
-    Type: 'AWS::Serverless::Function'
-    Properties:
-      FunctionName: S3EventFunction
-      Handler: app.notification_handler
-      Runtime: python3.12
-      CodeUri: ./students/
-      Environment:  # Define Environment Variable
-        Variables:
-          SNS_TOPIC_ARN:
-            Ref: S3SNSTopic
-      Events:     # Attach Trigger
-        S3Event:
-          Type: S3
-          Properties:
-            Bucket:
-              Ref: StudentsBucket
-            Events: s3:ObjectCreated:*
-      # Policies:   # Attach Policy
-      #   - S3ReadPolicy:
-      #       BucketName:
-      #         Ref: StudentsBucket
-
-          # S3 Topic Policy
-  S3InvokeTopicPermission:
-    Type: 'AWS::SNS::TopicPolicy'
-    Properties:
-      Topics:
-        - !Ref S3SNSTopic
-      PolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: 'Allow'
-            Principal:
-              Service: 'lambda.amazonaws.com'
-            Action: 'sns:Publish'
-            Resource: '*'
-
-          # S3 Lambda Permissions
-  LambdaInvokePermission:
-    Type: 'AWS::Lambda::Permission'
-    Properties:
-      Action: 'lambda:InvokeFunction'
-      FunctionName: !Ref S3EventFunction
-      Principal: 's3.amazonaws.com'
-
-          # S3 Topic Permissions
-  LambdaInvokeTopicPermission:
-    Type: 'AWS::Lambda::Permission'
-    Properties:
-      Action: 'lambda:InvokeFunction'
-      FunctionName: !Ref S3EventFunction
-      Principal: 'sns.amazonaws.com'
-
 # Outputs:
 #   StudentApi:
 #     Description: "API Gateway endpoint URL for Prod stage for Student function"
